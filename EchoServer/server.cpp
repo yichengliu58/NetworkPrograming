@@ -18,7 +18,7 @@
 using namespace std;
 
 const string serveraddr = "127.0.0.1";
-const int serverport = 56784;
+const int serverport = 56786;
 
 //全局量Vector用于存储客户端connfd
 vector<int> ClientConnfd;
@@ -76,23 +76,25 @@ void DoSelect(int listenfd)
 	//文件描述符fd_set结构（只用于判断可读性）
 	fd_set readfd;
 
-	//首先将监听socket描述符添加进fd_set结构体
-	FD_SET(listenfd,&readfd);
-	//更新最大描述符值
-	maxfd = listenfd;
-
-	struct timeval timeout;
-	timeout.tv_sec = 10;
-	timeout.tv_usec = 0;
-
 	//开始循环
 	while(true)
 	{
-		// for(int connfd : ClientConnfd)
-		// 	FD_SET(connfd,&readfd);
-		// FD_SET(listenfd,&readfd);
+		//clear all
+		FD_ZERO(&readfd);
+		//首先将监听socket描述符添加进fd_set结构体
+		FD_SET(listenfd,&readfd);
+		//更新最大描述符值
+		maxfd = listenfd;
+		//重新添加客户端连接描述符
+		for(int t : ClientConnfd)
+		{
+			cout << "add" << endl;
+			maxfd = maxfd < t ? t : maxfd;
+			FD_SET(t,&readfd);
+			cout << maxfd << listenfd << endl;
+		}
 		//调用select
-		ready = select(maxfd + 1,&readfd,NULL,NULL,&timeout);
+		ready = select(maxfd + 1,&readfd,NULL,NULL,NULL);
 		//select出错
 		if(ready == -1)
 		{
@@ -100,41 +102,40 @@ void DoSelect(int listenfd)
 			exit(1);
 		}
 		else if(ready == 0)
+			continue;
+		else
 		{
-			cout << "time out " << endl;
-			exit(1);
-		}
-		//检查监听描述符是否就绪
-		if(FD_ISSET(listenfd,&readfd))
-		{
-			//如果就绪说明有新的连接可以接受
-			if((connfd = accept(listenfd,(struct sockaddr*)&caddr,&caddrlen)) == -1)
+			//检查监听描述符是否就绪
+			if(FD_ISSET(listenfd,&readfd))
 			{
-				if(errno == EINTR)
-					continue;
-				else
+				//如果就绪说明有新的连接可以接受
+				if((connfd = accept(listenfd,(struct sockaddr*)&caddr,&caddrlen)) == -1)
 				{
-					cout << "accept出错" << endl;
-					exit(1);
+					if(errno == EINTR)
+						continue;
+					else
+					{
+						cout << "accept出错" << endl;
+						exit(1);
+					}
 				}
+				//输出新连接信息到终端
+				cout << "客户端：" << inet_ntoa(caddr.sin_addr) << "已连接" << endl;
+				//将新连接的客户端连接描述符添加进vector
+				ClientConnfd.push_back(connfd);
+				//同时将该描述符添加进select集合中
+				FD_SET(connfd,&readfd);
+				//更新最大描述符值
+				maxfd = (maxfd < connfd ? connfd : maxfd);
+				//判断是否只有监听描述符就绪（即没有已连接的客户端发送消息，只有新连接请求）
+				cout << "ready: " << ready << endl;
+				if(ready == 1)
+					continue;			
 			}
-			//输出新连接信息到终端
-			cout << "客户端：" << inet_ntoa(caddr.sin_addr) << "已连接" << endl;
-			//将新连接的客户端连接描述符添加进vector
-			ClientConnfd.push_back(connfd);
-			//同时将该描述符添加进select集合中
-			FD_SET(connfd,&readfd);
-			//更新最大描述符值
-			maxfd = (maxfd < connfd ? connfd : maxfd);
-			//判断是否只有监听描述符就绪（即没有已连接的客户端发送消息，只有新连接请求）
-			if(ready <= 1)
-			{
-				cout << "continue" << endl;
-				continue;			
-			}
+			cout << "can echo" << endl;
+			DoEcho(&readfd);
 		}
-		//循环处理已连接客户端中的回显功能
-		DoEcho(&readfd);
+		
 	}
 }
 
@@ -151,6 +152,7 @@ void DoEcho(fd_set* readfd)
 			int n = recv(*it,buf,sizeof(buf),0);
 			if(n == 0)
 			{
+				cout << "client closed" << endl;
 				close(*it);
 				FD_CLR(*it,readfd);
 				//删除元素
@@ -162,6 +164,7 @@ void DoEcho(fd_set* readfd)
 				++it;
 				//将数据返回
 				send(*it,buf,sizeof(buf),0);
+				cout << buf << endl;
 			}
 		}
 	}

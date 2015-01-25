@@ -10,7 +10,7 @@
 #include <iostream>
 using namespace std;
 const string serveraddr = "127.0.0.1";
-const int serverport = 56784;
+const int serverport = 56786;
 
 int main()
 {
@@ -26,19 +26,43 @@ int main()
 		cout << "connect failed" << endl;
 	else
 	{
-		string msg;
-		cin >> msg;
 		char buf[1024];
-		send(sockfd,msg.c_str(),msg.length(),0);
-		cout << "sent " << endl;
-		if(recv(sockfd,buf,sizeof(buf),0) == 0)
+		char re[1024];
+		string msg;
+		int maxfd;
+		fd_set readfd;
+
+		FD_ZERO(&readfd);
+		while(true)
 		{
-			cout << "server closed" << endl;
-			close(sockfd);
-			exit(1);
+			FD_SET(STDIN_FILENO,&readfd);
+			FD_SET(sockfd,&readfd);
+			maxfd = STDIN_FILENO > sockfd ? STDIN_FILENO : sockfd;
+
+			select(maxfd + 1,&readfd,NULL,NULL,NULL);
+			if(FD_ISSET(sockfd,&readfd))
+			{
+				int ret = recv(sockfd,buf,sizeof(buf),0);
+				if(ret == 0)
+				{
+					cout << "server is closed" << endl;
+					close(sockfd);
+					FD_CLR(sockfd,&readfd);
+					exit(1);
+				}
+				cout << buf << endl;
+			}
+			if(FD_ISSET(STDIN_FILENO,&readfd))
+			{
+				int n = read(STDIN_FILENO,re,1024);
+             	if (n  == 0)
+             	{
+                	FD_CLR(STDIN_FILENO,&readfd);
+                	continue;
+             	}
+             	write(sockfd,re,n);
+			}
 		}
-		else
-			cout << buf << endl;
 	}
 	close(sockfd);
 	return 0;
