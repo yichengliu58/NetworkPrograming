@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include <memory.h>
 
 #include <netinet/in.h>
 #include <bits/socket.h>
@@ -21,17 +22,17 @@ const string serveraddr = "127.0.0.1";
 const int serverport = 56786;
 
 //全局量Vector用于存储客户端connfd
-vector<int> ClientConnfd;
+int ClientConnfd[10];
 int listenfd;
 
 void DoEcho(fd_set* readfd);
 
 void HandleInt(int signal)
 {
-	cout << "servet is closed" << endl;
+	cout << "server is closed" << endl;
 	close(listenfd);
-	for(int connfd : ClientConnfd)
-		close(connfd);
+	for(int i = 0;i < 10;i++)
+		close(ClientConnfd[i]);
 	exit(0);
 }
 
@@ -86,12 +87,13 @@ void DoSelect(int listenfd)
 		//更新最大描述符值
 		maxfd = listenfd;
 		//重新添加客户端连接描述符
-		for(int t : ClientConnfd)
+		for(int i = 0;i < 10;i++)
 		{
-			cout << "add" << endl;
-			maxfd = maxfd < t ? t : maxfd;
-			FD_SET(t,&readfd);
-			cout << maxfd << listenfd << endl;
+			if(ClientConnfd[i] > 0)
+			{
+				maxfd = maxfd < ClientConnfd[i] ? ClientConnfd[i] : maxfd;
+				FD_SET(ClientConnfd[i],&readfd);
+			}
 		}
 		//调用select
 		ready = select(maxfd + 1,&readfd,NULL,NULL,NULL);
@@ -122,17 +124,20 @@ void DoSelect(int listenfd)
 				//输出新连接信息到终端
 				cout << "客户端：" << inet_ntoa(caddr.sin_addr) << "已连接" << endl;
 				//将新连接的客户端连接描述符添加进vector
-				ClientConnfd.push_back(connfd);
+				for(int i = 0;i < 10;i++)
+					if(ClientConnfd[i] < 0)
+					{
+						ClientConnfd[i] = connfd;
+						break;
+					}
 				//同时将该描述符添加进select集合中
 				FD_SET(connfd,&readfd);
 				//更新最大描述符值
 				maxfd = (maxfd < connfd ? connfd : maxfd);
 				//判断是否只有监听描述符就绪（即没有已连接的客户端发送消息，只有新连接请求）
-				cout << "ready: " << ready << endl;
 				if(ready == 1)
 					continue;			
 			}
-			cout << "can echo" << endl;
 			DoEcho(&readfd);
 		}
 		
@@ -142,29 +147,30 @@ void DoSelect(int listenfd)
 //用于处理已连接的客户端中每一个客户的回显功能
 void DoEcho(fd_set* readfd)
 {
-	for(vector<int>::iterator it = ClientConnfd.begin();
-		it != ClientConnfd.end();)
+	char buf[1024];
+	for(int i = 0;i < 10;i++)
 	{
+		int it = ClientConnfd[i];
 		//如果该客户端连接描述符已就绪即可读写数据
-		if(FD_ISSET(*it,readfd))
+		if(FD_ISSET(it,readfd))
 		{
-			char buf[1024];
-			int n = recv(*it,buf,sizeof(buf),0);
+			memset(buf,'\0',sizeof(buf));
+			int n = recv(it,buf,sizeof(buf),0);
 			if(n == 0)
 			{
 				cout << "client closed" << endl;
-				close(*it);
-				FD_CLR(*it,readfd);
+				close(it);
+				FD_CLR(it,readfd);
 				//删除元素
-				it = ClientConnfd.erase(it);
+				ClientConnfd[i] = -1;
 				continue;
 			}
 			else
 			{
-				++it;
 				//将数据返回
-				send(*it,buf,sizeof(buf),0);
-				cout << buf << endl;
+				int ret = send(it,buf,sizeof(buf),0);
+				if(ret == -1)
+					continue;
 			}
 		}
 	}
@@ -172,6 +178,8 @@ void DoEcho(fd_set* readfd)
 
 int main()
 {
+	for(int i = 0;i < 10;i++)
+		ClientConnfd[i] = -1;
 	signal(SIGINT,HandleInt);
 	listenfd = InitListenSock(serveraddr,serverport);
 	listen(listenfd,5);
