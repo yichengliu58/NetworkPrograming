@@ -81,7 +81,7 @@ int main(int argc, char const *argv[])
 		{
 			memset(buf,'\0',sizeof(buf));
 			recv(fds[1].fd,buf,BUFFERSIZE - 1,0);
-			cout << buf << endl;
+			cout << "fuckyou!!!!!!" << endl;
 		}
 		//判断标准输入是否有数据可读
 		if(fds[0].revents & POLLIN)
@@ -89,6 +89,7 @@ int main(int argc, char const *argv[])
 			//使用splice将用户输入数据直接移动到连接描述符上（使用管道）
 			ret = splice(0,NULL,pipefd[1],NULL,32768,5);
 			ret = splice(pipefd[0],NULL,sockfd,NULL,32768,5);
+
 		}
 	}
 	close(sockfd);
