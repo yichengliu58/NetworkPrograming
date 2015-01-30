@@ -53,6 +53,8 @@ int main(int argc, char const *argv[])
 	fds[1].events = POLLIN | POLLRDHUP;
 	fds[1].revents = 0;
 
+	//用户写数据缓冲区
+	char writebuf[1024];
 	// 接收数据缓冲区
 	char buf[BUFFERSIZE];
 	//构造管道
@@ -81,7 +83,7 @@ int main(int argc, char const *argv[])
 		{
 			memset(buf,'\0',sizeof(buf));
 			recv(fds[1].fd,buf,BUFFERSIZE - 1,0);
-			cout << "fuckyou!!!!!!" << endl;
+			//cout << "fuckyou!!!!!!" << endl;
 		}
 		//判断标准输入是否有数据可读
 		if(fds[0].revents & POLLIN)
@@ -89,7 +91,6 @@ int main(int argc, char const *argv[])
 			//使用splice将用户输入数据直接移动到连接描述符上（使用管道）
 			ret = splice(0,NULL,pipefd[1],NULL,32768,5);
 			ret = splice(pipefd[0],NULL,sockfd,NULL,32768,5);
-
 		}
 	}
 	close(sockfd);

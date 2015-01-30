@@ -37,7 +37,7 @@ int main(int argc, char const *argv[])
 {
 	if(argc <= 2)
 	{
-		cout << "Usage: " << argv[0] << "ip port" << endl;
+		cout << "Usage: " << argv[0] << " ip port" << endl;
 		exit(1);
 	}
 
@@ -91,6 +91,8 @@ int main(int argc, char const *argv[])
 		//分别对pollfd数组中每一个就绪的描述符的事件做处理
 		for(int i = 0;i < clientcount + 1;i++)
 		{
+			sleep(1);
+			cout << "i = " << i << endl;
 			//判断监听描述符是否可读（新连接）
 			//有则接受连接，并且将新的客户信息写入client数组
 			if(fds[i].fd == listenfd && (fds[i].revents & POLLIN))
@@ -147,8 +149,7 @@ int main(int argc, char const *argv[])
 			{
 				int connfd = fds[i].fd;
 				memset(client[connfd].readdata,'\0',sizeof(client[connfd].readdata));
-				ret = recv(connfd,client[i].readdata,sizeof(client[i].readdata),0);
-				cout << ret << endl;
+				ret = recv(connfd,client[connfd].readdata,sizeof(client[i].readdata),0);
 				if(ret < 0)
 				{
 					if(errno != EAGAIN)
@@ -161,14 +162,16 @@ int main(int argc, char const *argv[])
 					}
 				}				
 				else if(ret == 0)
-				{}
+				{
+				}
 				else
 				{
+					cout << "fuckass" << endl;
 					//读到了数据则通知其他连接描述符准备写数据
 					for(int j = 1;j <= clientcount;j++)
 					{
-						if(fds[j].fd == connfd)
-							continue;
+						//if(fds[j].fd == connfd)
+						//	continue;
 						fds[j].events |= ~POLLIN;
 						fds[j].events |= POLLOUT;
 						client[fds[j].fd].writedata = client[connfd].readdata;
@@ -178,12 +181,12 @@ int main(int argc, char const *argv[])
 			//如果可写
 			else if(fds[i].revents & POLLOUT)
 			{
-				cout << "write" << endl;
 				int connfd = fds[i].fd;
+				cout << "fuck!!!!!!!!!!" << endl;
 				if(client[connfd].writedata.empty())
 					continue;
 				ret = send(connfd,client[connfd].writedata.c_str(),client[connfd].writedata.length(),0);
-				cout << "send!!!!!!!!!" << endl;
+				cout << client[connfd].writedata << endl;
 				client[connfd].writedata.clear();
 				fds[i].events |= ~POLLOUT;
 				fds[i].events |= POLLIN;
