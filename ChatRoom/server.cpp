@@ -166,7 +166,7 @@ int main(int argc, char const *argv[])
 				}
 				else
 				{
-					cout << "fuckass" << endl;
+					cout << "read data :" << client[connfd].readdata << endl;
 					//读到了数据则通知其他连接描述符准备写数据
 					for(int j = 1;j <= clientcount;j++)
 					{
@@ -186,7 +186,7 @@ int main(int argc, char const *argv[])
 				if(client[connfd].writedata.empty())
 					continue;
 				ret = send(connfd,client[connfd].writedata.c_str(),client[connfd].writedata.length(),0);
-				cout << client[connfd].writedata << endl;
+				cout << "write data: " << client[connfd].writedata << endl;
 				client[connfd].writedata.clear();
 				fds[i].events |= ~POLLOUT;
 				fds[i].events |= POLLIN;
