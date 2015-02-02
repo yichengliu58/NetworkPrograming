@@ -170,6 +170,7 @@ int main(int argc, char const *argv[])
 					//读到了数据则通知其他连接描述符准备写数据
 					for(int j = 1;j <= clientcount;j++)
 					{
+						cout << clientcount << endl;
 						//if(fds[j].fd == connfd)
 						//	continue;
 						fds[j].events |= ~POLLIN;
@@ -184,7 +185,10 @@ int main(int argc, char const *argv[])
 				int connfd = fds[i].fd;
 				cout << "fuck!!!!!!!!!!" << endl;
 				if(client[connfd].writedata.empty())
+				{
+					cout << "empty " << endl;
 					continue;
+				}
 				ret = send(connfd,client[connfd].writedata.c_str(),client[connfd].writedata.length(),0);
 				cout << "write data: " << client[connfd].writedata << endl;
 				client[connfd].writedata.clear();
