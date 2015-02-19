@@ -1,4 +1,3 @@
-//echo client code
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -41,39 +40,6 @@ int main(int argc,char** argv)
 			//int ret = recv(sockfd,buf,sizeof(buf),0);
 			cout << ssss << endl;
 		}
-		//fd_set readfd;
-
-		// FD_ZERO(&readfd);
-		// while(true)
-		// {
-		// 	FD_SET(STDIN_FILENO,&readfd);
-		// 	FD_SET(sockfd,&readfd);
-		// 	maxfd = STDIN_FILENO > sockfd ? STDIN_FILENO : sockfd;
-
-		// 	select(maxfd + 1,&readfd,NULL,NULL,NULL);
-		// 	if(FD_ISSET(sockfd,&readfd))
-		// 	{
-		// 		int ret = recv(sockfd,buf,sizeof(buf),0);
-		// 		if(ret == 0)
-		// 		{
-		// 			cout << "server is closed" << endl;
-		// 			close(sockfd);
-		// 			FD_CLR(sockfd,&readfd);
-		// 			exit(1);
-		// 		}
-		// 		cout << buf << endl;
-		// 	}
-		// 	if(FD_ISSET(STDIN_FILENO,&readfd))
-		// 	{
-		// 		int n = read(STDIN_FILENO,re,1024);
-  //            	if (n  == 0)
-  //            	{
-  //               	FD_CLR(STDIN_FILENO,&readfd);
-  //               	continue;
-  //            	}
-  //            	write(sockfd,re,n);
-		// 	}
-		// }
 	}
 	close(sockfd);
 	return 0;
