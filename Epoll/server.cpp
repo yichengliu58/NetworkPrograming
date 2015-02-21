@@ -61,7 +61,7 @@ int main(int argc,char* argv[])
 	{
 		//sleep(2);
 		ret = epoll_wait(eventTable,events,128,-1);
-		cout << "finish waiting " << ret << endl;
+		//cout << "finish waiting " << ret << endl;
 		char buf[1024];
 		for(int i = 0;i < ret;i++)
 		{
@@ -72,7 +72,7 @@ int main(int argc,char* argv[])
 				ClientInfo client;
 				socklen_t size = sizeof(client.address);
 				client.connfd = accept(listenfd,(struct sockaddr*)&(client.address),&size);
-				cout << "accept new client: " << client.connfd << endl;
+				//cout << "accept new client: " << client.connfd << endl;
 				Clients.push_back(client);
 				assert(client.connfd != -1);
 				
@@ -116,7 +116,7 @@ int main(int argc,char* argv[])
 						}
 					}
 					else
-						cout << "message from client: " << readyfd << " : " << buf << endl; 
+						cout << Clients << readyfd << " : " << buf << endl; 
 				}
 				else
 					cout << "something strange happened " << endl;
