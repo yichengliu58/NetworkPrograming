@@ -28,14 +28,14 @@ void Socket::Listen(int backlog)
         throw std::runtime_error("监听套接字失败");
 }
 
-Socket Socket::Accept(const EndPoint& end)
+int Socket::Accept(const EndPoint& end)
 {
     int tmp;
     socklen_t size = sizeof(end.GetRawAddr());
     if((tmp = ::accept(this->fd, (sockaddr*)&end.GetRawAddr(), &size)) == -1)
         throw std::runtime_error("无法接受连接！");
     else
-        return Socket(tmp);
+        return tmp;
 }
 
 std::string Socket::ReadData() const
@@ -102,7 +102,8 @@ std::string ClientInfo::GetHostName() const
     return std::string(p->h_name);
 }
 
-void Epoller::Addfd(const FileDescriptor& fd, Event e,bool onet) {
+void Epoller::Addfd(const FileDescriptor& fd, Event e,bool onet)
+{
     struct epoll_event event;
     event.data.fd = fd.Get();
     switch (e) {
@@ -128,7 +129,7 @@ void Epoller::Addfd(const FileDescriptor& fd, Event e,bool onet) {
     }
     if(::epoll_ctl(eventTable, EPOLL_CTL_ADD, fd.Get(), &event) == -1)
     {
-        std::cout << "errno = " << errno << std::endl;
+        //std::cout << "errno = " << errno << std::endl;
         throw std::runtime_error("添加事件失败！");
     }
 }
@@ -139,7 +140,8 @@ const std::vector<struct epoll_event>& Epoller::Wait(int millisecond)
     int res = epoll_wait(eventTable, &*readyEvents.begin(), static_cast<int>(readyEvents.size()), millisecond);
     if(res > 0)
     {
-        unsigned long size = readyEvents.size()*2 < MAX_EVENT ? readyEvents.size() : MAX_EVENT;
+        unsigned long size = readyEvents.size()*2 < MAX_EVENT ? readyEvents.size()*2 : MAX_EVENT;
+        std::cout << "resize: " << size << std::endl;
         readyEvents.resize(size);
     }
     return readyEvents;

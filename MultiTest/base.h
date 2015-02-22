@@ -25,7 +25,7 @@ class FileDescriptor
 {
 public:
     FileDescriptor()
-            :fd(0)
+            :fd(-1)
     {}
     FileDescriptor(int f)
             :fd(f)
@@ -40,6 +40,11 @@ public:
     int Get() const
     {
         return fd;
+    }
+    //设置描述符值（仅供内部类型使用）
+    void Set(int f)
+    {
+        fd = f;
     }
 protected:
     //描述符值
@@ -74,7 +79,7 @@ public:
     //开始监听本socket
     void Listen(int);
     //接受连接
-    Socket Accept(const EndPoint&);
+    int Accept(const EndPoint&);
     //在该套接字上读取数据至用户缓冲区
     std::string ReadData() const;
     //将数据写入套接字
@@ -122,9 +127,9 @@ public:
     {
     }
     //外部设置socket描述符
-    void SetSocket(const Socket& s)
+    void SetSocket(int s)
     {
-        connfd = s;
+        connfd.Set(s);
     }
     //外部设置endpoint
     void SetEndPoint(const EndPoint& e)
