@@ -1,5 +1,5 @@
 #include "base.h"
-int FileDescriptor::SetNonBlocking()
+int FileDescriptor::SetNonBlocking() const
 {
     int old = fcntl(fd, F_GETFL);
     int new_ = old | O_NONBLOCK;
@@ -36,6 +36,54 @@ Socket Socket::Accept(const EndPoint& end)
         return Socket(tmp);
 }
 
+std::string Socket::ReadData() const
+{
+    char buf[MAX_BUFFER];
+    //循环读取数据
+    while(true)
+    {
+        memset(buf, '\0', MAX_BUFFER);
+        int res = static_cast<int>(::recv(fd, buf, MAX_BUFFER, 0));
+        if(res < 0)
+        {
+            if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+                break;
+            else
+                throw std::runtime_error("读取数据失败！");
+        }
+        else if(res == 0)
+            throw std::logic_error("客户端关闭了连接！");
+        else
+            continue;
+    }
+    return std::string(buf);
+}
+
+void Socket::WriteData(const std::string& s)
+{
+    //循环写
+    while(true)
+    {
+        int res = static_cast<int>(::write(fd, s.c_str(), s.length()));
+        if(res < 0)
+        {
+            if(errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+            else
+                throw std::runtime_error("写入数据失败！");
+        }
+        else
+            continue;
+    }
+}
+
+
+
+
+
+
+
+
 const Socket& ClientInfo::GetSocket() const
 {
     return this->connfd;
@@ -52,7 +100,7 @@ std::string ClientInfo::GetHostName() const
     return std::string(p->h_name);
 }
 
-void Epoller::Addfd(FileDescriptor& fd, Event e,bool onet) {
+void Epoller::Addfd(const FileDescriptor& fd, Event e,bool onet) {
     struct epoll_event event;
     event.data.fd = fd.Get();
     switch (e) {
@@ -79,19 +127,14 @@ void Epoller::Addfd(FileDescriptor& fd, Event e,bool onet) {
     epoll_ctl(eventTable, EPOLL_CTL_ADD, fd.Get(), &event);
 }
 
-int Epoller::Wait(int millisecond)
+const std::vector<struct epoll_event>& Epoller::Wait(int millisecond)
 {
     //bzero(readyEvents, sizeof(readyEvents));
     int res = epoll_wait(eventTable, &*readyEvents.begin(), static_cast<int>(readyEvents.size()), millisecond);
     if(res > 0)
         readyEvents.resize(readyEvents.size()*2);
-    return res;
-
-}
-
-const std::vector<struct epoll_event>& Epoller::GetEventSet()
-{
     return readyEvents;
+
 }
 
 

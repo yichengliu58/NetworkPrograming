@@ -7,13 +7,15 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <mutex>
 #include <unistd.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <sys/epoll.h>
 #include <string.h>
 
-#define MAX_EVENT 1024
+const unsigned int MAX_EVENT(1024);
+const unsigned int MAX_BUFFER(1024);
 
 class EndPoint;
 enum Event{in,out,error,hangup};
@@ -33,13 +35,14 @@ public:
         close(fd);
     }
     //设置为非阻塞
-    int SetNonBlocking();
+    int SetNonBlocking() const;
     //获取描述符值
     int Get() const
     {
         return fd;
     }
 protected:
+    //描述符值
     int fd;
 };
 
@@ -69,6 +72,10 @@ public:
     void Listen(int);
     //接受连接
     Socket Accept(const EndPoint&);
+    //在该套接字上读取数据至用户缓冲区
+    std::string ReadData() const;
+    //将数据写入套接字
+    void WriteData(const std::string& );
 };
 
 
@@ -78,7 +85,7 @@ class EndPoint
 public:
     EndPoint()
     {
-        bzero(&this->iner_addr, sizeof(this->iner_addr));
+        bzero(&iner_addr, sizeof(iner_addr));
     }
     EndPoint(const std::string&,int);
     ~EndPoint() = default;
@@ -91,7 +98,7 @@ public:
     //获取端口号
     int GetPort() const
     {
-        return iner_addr.sin_port;
+         return ::ntohs(iner_addr.sin_port);
     }
     //获取字符串地址
     std::string GetAddrInString() const
@@ -155,11 +162,9 @@ public:
     }
 
     //将指定描述符的指定事件添加进事件表
-    void Addfd(FileDescriptor& ,Event,bool);
+    void Addfd(const FileDescriptor& ,Event,bool);
     //开始等待
-    int Wait(int);
-    //获取完成的事件集合
-    const std::vector<struct epoll_event>& GetEventSet();
+    const std::vector<struct epoll_event>& Wait(int);
 private:
     //内核事件表描述符
     int eventTable;
@@ -167,7 +172,31 @@ private:
     std::vector<struct epoll_event> readyEvents;
 };
 
+//封装一次TCP连接
+class TcpConnection
+{
 
+};
+
+/*//封装事件循环
+class EventLoop
+{
+public:
+    EventLoop()
+            :isLoop(true),poller()
+    {}
+    ~EventLoop() = default;
+    EventLoop(const EventLoop&) = delete;
+    //开始循环
+    void BeginLoop();
+    //停止循环
+    void StopLoop();
+private:
+    //是否中断
+    bool isLoop;
+    //用于事件循环的poller
+    Epoller poller;
+};*/
 
 
 
