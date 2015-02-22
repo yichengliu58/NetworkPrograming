@@ -1,4 +1,6 @@
 #include "base.h"
+#include <iostream>
+
 int FileDescriptor::SetNonBlocking() const
 {
     int old = fcntl(fd, F_GETFL);
@@ -124,15 +126,22 @@ void Epoller::Addfd(const FileDescriptor& fd, Event e,bool onet) {
         event.events |= EPOLLET;
         fd.SetNonBlocking();
     }
-    epoll_ctl(eventTable, EPOLL_CTL_ADD, fd.Get(), &event);
+    if(::epoll_ctl(eventTable, EPOLL_CTL_ADD, fd.Get(), &event) == -1)
+    {
+        std::cout << "errno = " << errno << std::endl;
+        throw std::runtime_error("添加事件失败！");
+    }
 }
 
 const std::vector<struct epoll_event>& Epoller::Wait(int millisecond)
 {
-    //bzero(readyEvents, sizeof(readyEvents));
+    bzero(&*readyEvents.begin(), readyEvents.size());
     int res = epoll_wait(eventTable, &*readyEvents.begin(), static_cast<int>(readyEvents.size()), millisecond);
     if(res > 0)
-        readyEvents.resize(readyEvents.size()*2);
+    {
+        unsigned long size = readyEvents.size()*2 < MAX_EVENT ? readyEvents.size() : MAX_EVENT;
+        readyEvents.resize(size);
+    }
     return readyEvents;
 
 }

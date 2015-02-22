@@ -60,6 +60,9 @@ public:
         if ((fd = socket(PF_INET, SOCK_STREAM, 0)) == -1)
             throw std::runtime_error("socket创建失败！");
     }
+    Socket(int f)
+            :FileDescriptor(f)
+    {}
     //析构时关闭socket
     ~Socket() = default;
     //复制赋值运算符

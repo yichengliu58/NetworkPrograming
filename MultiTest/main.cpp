@@ -13,7 +13,7 @@ int main(int argc,char* argv[])
     try
     {
         Socket listenfd(true);
-        EndPoint server("192.168.1.100",/*std::atoi(argv[2])*/12348);
+        EndPoint server("192.168.1.100",/*std::atoi(argv[2])*/12377);
         listenfd.Bind(server);
         std::cout << "开始监听..." << std::endl;
         Epoller poller;
@@ -22,38 +22,39 @@ int main(int argc,char* argv[])
         while(true)
         {
             const std::vector<struct epoll_event>& res = poller.Wait(-1);
-            std::cout << "返回wait" << std::endl;
+            std::cout << "返回wait " << res.capacity() << std::endl;
             for(auto& r : res)
             {
-                if (r.data.fd == listenfd.Get())
+                std::cout << (r.events) << std::endl;
+                if(r.events & EPOLLIN)
                 {
-                    std::cout << "listen" << std::endl;
-                    ClientInfo client;
-                    client.SetSocket(listenfd.Accept(client.GetEndPoint()));
-                    poller.Addfd(client.GetSocket(), Event::in, true);
-                    Clients.push_back(client);
-                }
-                else if (r.events & EPOLLIN)
-                {
-                    std::cout << "listendfdsfsd" << std::endl;
-                    std::list<ClientInfo>::iterator it = Clients.begin();
-                    for (it;it != Clients.end();)
-                        if(it->GetSocket().Get() == r.data.fd)
-                        {
-                            try
-                            {
-                                std::string data = it->GetSocket().ReadData();
-                                std::cout << data << std::endl;
-                                break;
+                    if (r.data.fd == listenfd.Get())
+                    {
+                        std::cout << "listen" << std::endl;
+                        ClientInfo client;
+                        client.SetSocket(listenfd.Accept(client.GetEndPoint()));
+                        poller.Addfd(client.GetSocket(), Event::in, true);
+                        Clients.push_back(client);
+                    }
+                    else
+                    {
+                        std::cout << "fuckyou!!!!" << std::endl;
+                        /*std::list<ClientInfo>::iterator it = Clients.begin();
+                        for (it; it != Clients.end();) {
+                            if (it->GetSocket().Get() == r.data.fd) {
+                                try {
+                                    std::string data = it->GetSocket().ReadData();
+                                    std::cout << data << std::endl;
+                                    break;
+                                }
+                                catch (const std::logic_error &e) {
+                                    Clients.erase(it);
+                                    break;
+                                }
                             }
-                            catch (const std::logic_error &e)
-                            {
-                                Clients.erase(it);
-                                break;
-                            }
-                        }
+                        }*/
+                    }
                 }
-                std::cout << "foreach" << std::endl;
             }
         }
     }
