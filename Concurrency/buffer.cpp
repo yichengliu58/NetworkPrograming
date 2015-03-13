@@ -6,6 +6,8 @@
 #include <thread>
 #include <iostream>
 #include <functional>
+#include <string>
+#include <random>
 
 template<typename T>
 class Buffer
@@ -15,7 +17,10 @@ public:
 	:size(size),queue(),lock(),cond()
 	{
 	}
-	Buffer(const Buffer&) = delete;
+	Buffer(const Buffer& other)
+	:size(other.size),queue(other.queue),lock(),cond()
+	{
+	}
 	~Buffer() = default;
 	Buffer& operator=(const Buffer&) = delete;
 
@@ -66,29 +71,38 @@ bool Buffer<T>::Empty() const
 	return queue.empty();
 }
 
-void Producer(Buffer<double>& buf)
+template<typename T>
+void Producer(Buffer<T>& buf,std::function<T()> fun)
 {
-	int i;
-	for(i = 1;i < 10000000;++i)
+	for(int i = 0;i < 10000;++i)
 	{	
-		buf.Push(static_cast<double>(i)/5);
+		buf.Push(fun());
 	}
 }
 
-void Consumer(Buffer<double>& buf)
+template<typename T>
+void Consumer(Buffer<T>& buf)
 {
-	int i;
-	for(i = 1;i < 10000000;++i)
+	for(int i = 0;i < 10000;++i)
 	{
 		std::cout << *(buf.Pop()) << std::endl;
 	}
 }
 
+int getInt()
+{
+	//generate random numbers from 0 to 1000
+	static std::uniform_int_distribution<int> range(0,1000);
+	//get default random engine
+	static std::default_random_engine engine;
+	return range(engine);
+}
+
 int main()
 {
-	Buffer<double> buffer(100);
-	std::thread produce(Producer,std::ref(buffer));
-	std::thread consume(Consumer,std::ref(buffer));
+	Buffer<int> buffer(100);
+	std::thread produce(Producer<int>,std::ref(buffer),getInt);
+	std::thread consume(Consumer<int>,std::ref(buffer));
 	produce.join();
 	consume.join();
 	return 0;
