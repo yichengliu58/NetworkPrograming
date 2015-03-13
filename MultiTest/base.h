@@ -103,6 +103,10 @@ public:
     {
         return iner_addr;
     }
+    socklen_t GetRawAddrLen() const
+    {
+        return static_cast<socklen_t >(sizeof(iner_addr));
+    }
     //获取端口号
     int GetPort() const
     {
@@ -157,7 +161,7 @@ class Epoller
 {
 public:
     Epoller()
-            :eventTable(0),readyEvents(1)
+            :eventTable(-1),readyEvents(1)
     {
         eventTable = ::epoll_create(5);
         if(eventTable <= 0)

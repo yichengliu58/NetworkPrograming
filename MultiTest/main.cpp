@@ -1,7 +1,8 @@
 #include "base.h"
 #include <iostream>
-#include <cstdlib>
 #include <list>
+#include <thread>
+
 int main(int argc,char* argv[])
 {
     std::list<ClientInfo> Clients;
@@ -23,17 +24,18 @@ int main(int argc,char* argv[])
         {
             std::cout << "循环一次" << std::endl;
             const std::vector<struct epoll_event>& res = poller.Wait(-1);
-            std::cout << "返回wait " << res.capacity() << std::endl;
+            //std::cout << "返回wait " << res.capacity() << std::endl;
             for(auto& r : res)
             {
+                std::cout << "event is " << r.events << std::endl;
                 if(r.events & EPOLLIN)
                 {
-                    std::cout << "获取事件" << std::endl;
+                    //std::cout << "获取事件" << std::endl;
                     if (r.data.fd == listenfd.Get())
                     {
-                        std::cout << "listen" << std::endl;
                         ClientInfo client;
                         client.SetSocket(listenfd.Accept(client.GetEndPoint()));
+                        std::cout << "接受新连接" << std::endl;
                         poller.Addfd(client.GetSocket(), Event::in, false);
                         Clients.push_back(client);
                     }

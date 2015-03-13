@@ -15,6 +15,7 @@
 #include <memory>
 #include <memory.h>
 #include <assert.h>
+#include <vector>
 
 using namespace std;
 
@@ -51,8 +52,8 @@ int main(int argc,char* argv[])
 
 	epoll_ctl(eventTable,EPOLL_CTL_ADD,listenfd,&listenevent);
 
-	struct epoll_event events[128];
-
+	std::vector<struct epoll_event> events(128);
+	//struct epoll_event events[128];
 	ret = listen(listenfd,5);
 	assert(ret == 0);
 
@@ -60,7 +61,7 @@ int main(int argc,char* argv[])
 	while(true)
 	{
 		//sleep(2);
-		ret = epoll_wait(eventTable,events,128,-1);
+		ret = epoll_wait(eventTable,&*events.begin(),128,3000);
 		//cout << "finish waiting " << ret << endl;
 		char buf[1024];
 		for(int i = 0;i < ret;i++)
@@ -69,17 +70,18 @@ int main(int argc,char* argv[])
 			//cout << "readyfd num : " << readyfd << " i = " << i << endl;
 			if(readyfd == listenfd)
 			{
-				ClientInfo client;
+				cout << "accept new client: " << endl;
+				/*ClientInfo client;
 				socklen_t size = sizeof(client.address);
 				client.connfd = accept(listenfd,(struct sockaddr*)&(client.address),&size);
-				//cout << "accept new client: " << client.connfd << endl;
+				
 				Clients.push_back(client);
 				assert(client.connfd != -1);
 				
 				struct epoll_event clientevent;
 				clientevent.events = EPOLLIN;
 				clientevent.data.fd = client.connfd;
-				epoll_ctl(eventTable,EPOLL_CTL_ADD,client.connfd,&clientevent);
+				epoll_ctl(eventTable,EPOLL_CTL_ADD,client.connfd,&clientevent);*/
 			}
 			/*if(events[i].events & EPOLLIN)
 				cout << "epoll in " << events[i].data.fd << endl;
@@ -116,7 +118,7 @@ int main(int argc,char* argv[])
 						}
 					}
 					else
-						cout << Clients << readyfd << " : " << buf << endl; 
+						cout << buf << endl; 
 				}
 				else
 					cout << "something strange happened " << endl;
