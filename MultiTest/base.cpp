@@ -41,23 +41,12 @@ int Socket::Accept(const EndPoint& end)
 std::string Socket::ReadData() const
 {
     char buf[MAX_BUFFER];
-    //循环读取数据
-    while(true)
-    {
-        memset(buf, '\0', MAX_BUFFER);
-        int res = static_cast<int>(::recv(fd, buf, MAX_BUFFER, 0));
-        if(res < 0)
-        {
-            if((errno == EAGAIN) || (errno == EWOULDBLOCK))
-                break;
-            else
-                throw std::runtime_error("读取数据失败！");
-        }
-        else if(res == 0)
-            throw std::logic_error("客户端关闭了连接！");
-        else
-            continue;
-    }
+    memset(buf, '\0', MAX_BUFFER);
+    int res = static_cast<int>(::recv(fd, buf, MAX_BUFFER, 0));
+    if(res < 0)
+        throw std::runtime_error("读取数据失败！");
+    else if(res == 0)
+        throw std::logic_error("客户端关闭了连接！");
     return std::string(buf);
 }
 
@@ -134,10 +123,10 @@ void Epoller::Addfd(const FileDescriptor& fd, Event e,bool onet)
     }
 }
 
-const std::vector<struct epoll_event>& Epoller::Wait(int millisecond)
+const std::vector<struct epoll_event>& Epoller::Wait(int millisecond,int& res)
 {
     bzero(&*readyEvents.begin(), readyEvents.size());
-    int res = epoll_wait(eventTable, &*readyEvents.begin(),readyEvents.size(),millisecond);
+    res = epoll_wait(eventTable, &*readyEvents.begin(),readyEvents.size(),millisecond);
     if(res > 0)
     {
         unsigned long size = readyEvents.size()*2 < MAX_EVENT ? readyEvents.size()*2 : MAX_EVENT;

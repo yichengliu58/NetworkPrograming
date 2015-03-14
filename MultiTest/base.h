@@ -176,7 +176,7 @@ public:
     //将指定描述符的指定事件添加进事件表
     void Addfd(const FileDescriptor& ,Event,bool);
     //开始等待
-    const std::vector<struct epoll_event>& Wait(int);
+    const std::vector<struct epoll_event>& Wait(int,int&);
 private:
     //内核事件表描述符
     int eventTable;

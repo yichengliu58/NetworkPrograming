@@ -3,9 +3,11 @@
 #include <list>
 #include <thread>
 
+typedef std::shared_ptr<ClientInfo> ClientInfoPtr;
+
 int main(int argc,char* argv[])
 {
-    std::list<ClientInfo> Clients;
+    std::list<ClientInfoPtr> Clients;
     if(argc < 3)
     {
         std::cout << "主函数参数太少" << std::endl;
@@ -22,41 +24,49 @@ int main(int argc,char* argv[])
         listenfd.Listen(5);
         while(true)
         {
-            std::cout << "循环一次" << std::endl;
-            const std::vector<struct epoll_event>& res = poller.Wait(-1);
-            //std::cout << "返回wait " << res.capacity() << std::endl;
-            for(auto& r : res)
+            int num = 0;
+            //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            static int times = 1;
+            const std::vector<struct epoll_event>& res = poller.Wait(-1,num);
+            int i = 0;
+            for(auto it = res.cbegin();i < num;++it,++i)
             {
-                std::cout << "event is " << r.events << std::endl;
-                if(r.events & EPOLLIN)
+                if(it->events & EPOLLIN)
                 {
-                    //std::cout << "获取事件" << std::endl;
-                    if (r.data.fd == listenfd.Get())
+                    if (it->data.fd == listenfd.Get())
                     {
-                        ClientInfo client;
-                        client.SetSocket(listenfd.Accept(client.GetEndPoint()));
+                        ClientInfoPtr client(new ClientInfo);
+                        client->SetSocket(listenfd.Accept(client->GetEndPoint()));
                         std::cout << "接受新连接" << std::endl;
-                        poller.Addfd(client.GetSocket(), Event::in, false);
+                        poller.Addfd(client->GetSocket(), Event::in, false);
                         Clients.push_back(client);
                     }
                     else
                     {
-                        std::cout << "fuckyou!!!!" << std::endl;
-                        /*std::list<ClientInfo>::iterator it = Clients.begin();
-                        for (it; it != Clients.end();) {
-                            if (it->GetSocket().Get() == r.data.fd) {
-                                try {
-                                    std::string data = it->GetSocket().ReadData();
+                        std::list<ClientInfoPtr>::iterator itor = Clients.begin();
+                        for (itor; itor != Clients.end();)
+                        {
+                            if ((*itor)->GetSocket().Get() == it->data.fd)
+                            {
+                                try
+                                {
+                                    std::string data = (*itor)->GetSocket().ReadData();
                                     std::cout << data << std::endl;
                                     break;
                                 }
-                                catch (const std::logic_error &e) {
-                                    Clients.erase(it);
+                                catch (const std::logic_error &e)
+                                {
+                                    Clients.erase(itor);
                                     break;
                                 }
                             }
-                        }*/
+                        }
                     }
+                }
+                else
+                {
+                    std::cout << "发生了什么奇怪的事情" << std::endl;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 }
             }
         }
