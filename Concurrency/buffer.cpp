@@ -1,3 +1,5 @@
+//简单实现的单生产者单消费者队列
+
 #include <thread>
 #include <mutex>
 #include <condition_variable>
