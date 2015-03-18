@@ -76,9 +76,9 @@ int main(int argc,char** argv)
 {
 	long count = stol(argv[1])/1000;
 	int i = 1000;
-	future<void> res = async(GenerateData,"data.txt",stol(argv[1]));
+	/*future<void> res = async(GenerateData,"data.txt",stol(argv[1]));
 	res.wait();
-	cout << "创建文件完成" << endl;
+	cout << "创建文件完成" << endl;*/
 	ifstream in("data.txt");
 	string line;
 	while(i--)
@@ -93,6 +93,7 @@ int main(int argc,char** argv)
 		cout << "完成第" << i << "个文件" << endl;
 		//ofstream out(to_string(hash) + ".txt",ofstream::out|ofstream::app);
 	}
+	vector<future<pair<long,unsigned>>> futureSet;
 	vector<pair<long,unsigned>> resSet;
 	ifstream streams[1000];
 	for(int i = 0;i < 1000;i++)
@@ -101,9 +102,14 @@ int main(int argc,char** argv)
 		streams[i].open(to_string(i) + ".txt");
 		//stream.back().open(to_string(i) + ".txt");
 		//cout << "1" << endl;
-		//resSet.emplace_back(async(DealFile,ref(streams[i])));
-		resSet.push_back(DealFile(streams[i]));
+		futureSet.emplace_back(async(DealFile,ref(streams[i])));
+		//resSet.push_back(DealFile(streams[i]));
+		//cout << "new one thread" << endl;
 		//this_thread::sleep_for(chrono::seconds(1));
+	}
+	for(auto& f : futureSet)
+	{
+		resSet.emplace_back(f.get());
 	}
 	cout << "开始排序" << endl;
 	sort(resSet.begin(),resSet.end(),
