@@ -12,6 +12,7 @@
 #include <thread>
 #include <memory>
 #include <chrono>
+#include <algorithm>
 using namespace std;
 
 map<long,unsigned> table;
@@ -52,20 +53,22 @@ void GenerateData(string filename,long count)
 
 pair<long,unsigned> DealFile(ifstream& out)
 {
-	cout << "fuck" << endl;
 	map<long,unsigned> record;
-	while(out)
+	string s;
+	while(getline(out,s))
 	{
-		string s;
-		out >> s;
+		if(s.empty())
+			break;
 		long num = GetIntIP(s);
 		record[num]++;
+		//this_thread::sleep_for(chrono::seconds(3));
 	}
+	//cout << "one time " << endl;
 	pair<long,unsigned> init = {0,0};
 	for(auto& p : record)
 		if(p.second > init.second)
 			init = p;
-	cout << "fininshed" << endl;
+	//cout << init.second << endl;
 	return init;
 }
 
@@ -75,6 +78,7 @@ int main(int argc,char** argv)
 	int i = 1000;
 	future<void> res = async(GenerateData,"data.txt",stol(argv[1]));
 	res.wait();
+	cout << "创建文件完成" << endl;
 	ifstream in("data.txt");
 	string line;
 	while(i--)
@@ -86,23 +90,25 @@ int main(int argc,char** argv)
 			//long ipInt = GetIntIP(line);
 			out << line << endl;
 		}
+		cout << "完成第" << i << "个文件" << endl;
 		//ofstream out(to_string(hash) + ".txt",ofstream::out|ofstream::app);
 	}
-	vector<future<pair<long,unsigned>>> resSet;
-	vector<ifstream> stream;
+	vector<pair<long,unsigned>> resSet;
+	ifstream streams[1000];
 	for(int i = 0;i < 1000;i++)
 	{
-		//ifstream t(to_string(i) + ".txt");
-		stream.emplace_back();
-		stream.back().open(to_string(i) + ".txt");
-		cout << "1" << endl;
-		resSet.emplace_back(async(DealFile,ref(stream.back())));
-		cout << "2" << endl;
-		this_thread::sleep_for(chrono::seconds(1));
+		cout << "处理第" << i << "个文件" << endl;
+		streams[i].open(to_string(i) + ".txt");
+		//stream.back().open(to_string(i) + ".txt");
+		//cout << "1" << endl;
+		//resSet.emplace_back(async(DealFile,ref(streams[i])));
+		resSet.push_back(DealFile(streams[i]));
+		//this_thread::sleep_for(chrono::seconds(1));
 	}
-	//vector<unsigned> r;
-	for(auto& f : resSet)
-		//res.push_back(f.get().second);
-		cout << f.get().second << endl;
+	cout << "开始排序" << endl;
+	sort(resSet.begin(),resSet.end(),
+		[](const pair<long,unsigned>& lhs,const pair<long,unsigned>& rhs)
+		{ return lhs.second < rhs.second;});
+	cout << "ip: " << resSet.back().first << " count: " << resSet.back().second  << endl;
 	return 0;
 }
