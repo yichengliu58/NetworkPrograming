@@ -1,7 +1,7 @@
 #include <iostream>
 #include <random>
-#include <bits/algorithmfwd.h>
-#include <bits/stl_algo.h>
+#include <chrono>
+#include <thread>
 
 
 using namespace std;
@@ -138,7 +138,7 @@ void HeapSort(int arr[],int n)
     for(int i = n - 1;i > 0;i--)
     {
         //删除堆顶元素
-        cout << arr[0] << endl;
+        //cout << arr[0] << endl;
         //将最后一个元素放到堆顶
         arr[0] = arr[i];
         //调整堆
@@ -148,24 +148,45 @@ void HeapSort(int arr[],int n)
 
 //
 
+//希尔排序部分
+//增量序列 inc = n / 2^i，其中i是排序次数
+void ShellSort(int arr[],int n)
+{
+    //定义增量值
+    int inc;
+    //最外层控制增量值
+    for(inc = n/2;inc > 0;inc /= 2)
+        //从左向右扫描
+        for(int i = inc;i < n;i++)
+            //对于扫描到的每一个分组：
+            for(int j = i - inc;j >= 0;j -= inc)
+                //执行插入排序
+                if(arr[j] > arr[j + inc])
+                    Swap(arr[j],arr[j + inc]);
+}
+
+
+
+//
+
 
 int main(int argc,char* argv[])
 {
     int length = stoi(argv[1]);
     int* numList = new int[length];
     default_random_engine engine;
-    uniform_int_distribution<int> u(20,100);
+    uniform_int_distribution<int> u(1,1000000);
     //初始化该数组
     for(int c = 0;c < length;c++)
-    {
         numList[c] = u(engine);
-        cout << numList[c] << " ";
-    }
     //排序部分
-    cout << endl;
-    HeapSort(numList,length);
+    auto start = chrono::system_clock::now();
+    HeapSort(numList,length );
+    auto end = chrono::system_clock::now();
     //输出结果
-    //for(int c = 0;c < length;c++)
-        //cout << numList[c] << " ";
+    for(int c = 0;c < length;c++)
+        cout << numList[c] << " ";
+    cout << endl;
+    cout << "time : " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
     return 0;
 }
