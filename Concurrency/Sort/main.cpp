@@ -194,7 +194,7 @@ void MergeSort(int origin[],int result[],int n)
 {
     //用来在后面交换两个数组指针
     int* tmp = nullptr;
-    //初识时是相邻两个合并，每个元素当作一个序列，所以len=1
+    //初始时是相邻两个合并，每个元素当作一个序列，所以len=1
     int len = 1;
     //合并数组长度从1到最后的n
     while(len < n)
@@ -221,7 +221,7 @@ int main(int argc,char* argv[])
     int length = stoi(argv[1]);
     int* numList = new int[length];
     default_random_engine engine;
-    uniform_int_distribution<int> u(1,1000);
+    uniform_int_distribution<int> u(1,10);
     //初始化该数组
     for(int c = 0;c < length;c++)
         numList[c] = u(engine);
