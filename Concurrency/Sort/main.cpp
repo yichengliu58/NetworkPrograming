@@ -148,7 +148,7 @@ void HeapSort(int arr[],int n)
 
 //
 
-//希尔排序部分
+//希尔排序
 //增量序列 inc = n / 2^i，其中i是排序次数
 void ShellSort(int arr[],int n)
 {
@@ -165,9 +165,55 @@ void ShellSort(int arr[],int n)
                     Swap(arr[j],arr[j + inc]);
 }
 
+//归并排序部分
+//合并函数，合并两个数组origin[i]~origin[m]，和origin[m+1]~origin[n]
+//结果存放在result[i...n]
+void Merge(int* origin,int* result,int i,int m,int n)
+{
+    //用于结果数组索引
+    int k = i;
+    //用于第二个数组索引
+    int j = m + 1;
+    //开始合并
+    while(i <= m && j <= n)
+    {
+        //把小的那个数加入到结果数组中
+        if(origin[i] >= origin[j])
+            result[k++] = origin[j++];
+        else
+            result[k++] = origin[i++];
+    }
+    //当其中一部分已经完成后继续将剩下的全部放入结果数组
+    while(i <= m)
+        result[k++] = origin[i++];
+    while(j <= n)
+        result[k++] = origin[j++];
+}
 
-
-//
+void MergeSort(int origin[],int result[],int n)
+{
+    //用来在后面交换两个数组指针
+    int* tmp = nullptr;
+    //初识时是相邻两个合并，每个元素当作一个序列，所以len=1
+    int len = 1;
+    //合并数组长度从1到最后的n
+    while(len < n)
+    {
+        int i;
+        //相邻两个序列合并至结果数组中
+        for(i = 0;i < n - 2*len;i += len*2)
+            Merge(origin,result,i,i + len - 1,i + 2*len - 1);
+        //判断是否最后多出来一个（原始数组长度为奇数时）
+        if(i + len < n)
+            Merge(origin,result,i,i + len - 1,n - 1);
+        //最后交换原始数组指针和结果数组指针，使原始数组可以继续使用来归并
+        tmp = origin;
+        origin = result;
+        result = tmp;
+        //将len加倍
+        len *= 2;
+    }
+}
 
 
 int main(int argc,char* argv[])
@@ -175,17 +221,21 @@ int main(int argc,char* argv[])
     int length = stoi(argv[1]);
     int* numList = new int[length];
     default_random_engine engine;
-    uniform_int_distribution<int> u(1,1000000);
+    uniform_int_distribution<int> u(1,1000);
     //初始化该数组
     for(int c = 0;c < length;c++)
         numList[c] = u(engine);
+    //增加的数组
+    int* res = new int[length];
     //排序部分
     auto start = chrono::system_clock::now();
-    HeapSort(numList,length );
+    MergeSort(numList,res,length );
     auto end = chrono::system_clock::now();
     //输出结果
+    /*int* res = new int[length];
+    Merge(numList,res,0,length/2,length);*/
     for(int c = 0;c < length;c++)
-        cout << numList[c] << " ";
+        cout << res[c] << " ";
     cout << endl;
     cout << "time : " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
     return 0;
