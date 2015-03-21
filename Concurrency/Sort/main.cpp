@@ -166,7 +166,7 @@ void ShellSort(int arr[],int n)
 }
 
 //归并排序部分
-//合并函数，合并两个数组origin[i]~origin[m]，和origin[m+1]~origin[n]
+//合并函数，合并两个数组origin[i...m]，和origin[m+1...n]
 //结果存放在result[i...n]
 void Merge(int* origin,int* result,int i,int m,int n)
 {
@@ -178,7 +178,7 @@ void Merge(int* origin,int* result,int i,int m,int n)
     while(i <= m && j <= n)
     {
         //把小的那个数加入到结果数组中
-        if(origin[i] >= origin[j])
+        if(origin[i] > origin[j])
             result[k++] = origin[j++];
         else
             result[k++] = origin[i++];
@@ -189,7 +189,7 @@ void Merge(int* origin,int* result,int i,int m,int n)
     while(j <= n)
         result[k++] = origin[j++];
 }
-
+//排序用函数
 void MergeSort(int origin[],int result[],int n)
 {
     //用来在后面交换两个数组指针
@@ -206,14 +206,14 @@ void MergeSort(int origin[],int result[],int n)
         //判断是否最后多出来一个（原始数组长度为奇数时）
         if(i + len < n)
             Merge(origin,result,i,i + len - 1,n - 1);
-        //最后交换原始数组指针和结果数组指针，使原始数组可以继续使用来归并
-        tmp = origin;
-        origin = result;
-        result = tmp;
+        //将result的所有结果赋值给origin，以便下一次归并操作
+        for(int t = 0;t < n;t++)
+            origin[t] = result[t];
         //将len加倍
         len *= 2;
     }
 }
+//
 
 
 int main(int argc,char* argv[])
@@ -221,16 +221,19 @@ int main(int argc,char* argv[])
     int length = stoi(argv[1]);
     int* numList = new int[length];
     default_random_engine engine;
-    uniform_int_distribution<int> u(1,10);
+    uniform_int_distribution<int> u(1,50);
     //初始化该数组
-    for(int c = 0;c < length;c++)
+    for(int c = 0;c < length;c++) {
         numList[c] = u(engine);
+        cout << numList[c] << " ";
+    }
     //增加的数组
     int* res = new int[length];
     //排序部分
     auto start = chrono::system_clock::now();
     MergeSort(numList,res,length );
     auto end = chrono::system_clock::now();
+    cout << endl;
     //输出结果
     /*int* res = new int[length];
     Merge(numList,res,0,length/2,length);*/
