@@ -1,7 +1,10 @@
 #include <iostream>
+#include <vector>
 #include <random>
 #include <chrono>
 #include <thread>
+#include <algorithm>
+#include <future>
 
 
 using namespace std;
@@ -93,6 +96,42 @@ void QuickSort(int arr[],int low,int high)
     //递归左右两部分
     QuickSort(arr,low,left - 1);
     QuickSort(arr,right + 1,high);
+}
+
+//多线程快排
+void ParallelQSort(int arr[],int low,int high)
+{
+    if(low > high)
+        return;
+    //设置轴元素值
+    int pivot = arr[low];
+    //设置两方向计数
+    int left = low;
+    int right = high;
+    //扫描一遍数组，将轴元素放至正确位置
+    while(left < right)
+    {
+        //先将right向下移动，找到第一个比轴元素小的元素
+        while(left < right && arr[right] >= pivot)
+            --right;
+        //如果找到则直接将该元素赋值给arr[low]因为arr[low]值被pivot存储
+        if(left < right)
+            arr[left] = arr[right];
+        //再将low向上移动，找到第一个比轴元素大的元素
+        while(left < right && arr[left] <= pivot)
+            ++left;
+        //赋值
+        if(left < right)
+            arr[right] = arr[left];
+    }
+    //给轴元素赋值
+    arr[left] = pivot;
+    //此时left和right已经相等
+    //递归左右两部分
+    future<void> lower = async(ParallelQSort,arr,low,left - 1);
+    ParallelQSort(arr,right + 1,high);
+
+    lower.wait();
 }
 
 //堆排序部分
@@ -221,25 +260,24 @@ int main(int argc,char* argv[])
     int length = stoi(argv[1]);
     int* numList = new int[length];
     default_random_engine engine;
-    uniform_int_distribution<int> u(1,50);
+    uniform_int_distribution<int> u(0,10000);
     //初始化该数组
-    for(int c = 0;c < length;c++) {
+    for(int c = 0;c < length;c++)
+    {
         numList[c] = u(engine);
-        cout << numList[c] << " ";
+        //cout << numList[c] << " ";
     }
     //增加的数组
-    int* res = new int[length];
+    //int* res = new int[length];
     //排序部分
     auto start = chrono::system_clock::now();
-    MergeSort(numList,res,length );
+    ParallelQSort(numList,0,length - 1);
     auto end = chrono::system_clock::now();
     cout << endl;
     //输出结果
-    /*int* res = new int[length];
-    Merge(numList,res,0,length/2,length);*/
-    for(int c = 0;c < length;c++)
-        cout << res[c] << " ";
+    /*for(int c = 0;c < length;c++)
+        cout << numList[c] << " ";*/
     cout << endl;
-    cout << "time : " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms" << endl;
+    cout << "time : " << chrono::duration_cast<chrono::seconds>(end - start).count() << " s" << endl;
     return 0;
 }
