@@ -39,7 +39,9 @@ int main(int argc,char** argv)
 			cin >> msg;
 			int ssss = send(sockfd,msg.c_str(),msg.length(),0);
 			//int ret = recv(sockfd,buf,sizeof(buf),0);
-			cout << ssss << endl;
+			int res = recv(sockfd,buf,1024,0);
+			if(res > 0)
+			cout << buf << endl;
 		}
 		//fd_set readfd;
 

@@ -49,7 +49,7 @@ int InitListenSock(const string& ip,int port)
 	//设定服务器地址结构体
 	struct sockaddr_in saddr;
 	saddr.sin_family = AF_INET;
-	inet_pton(AF_INET,ip.c_str(),&saddr.sin_addr);
+	//inet_pton(AF_INET,ip.c_str(),&saddr.sin_addr);
 	saddr.sin_port = htons(port);
 	//绑定
 	if(bind(listenfd,(struct sockaddr*)&saddr,sizeof(saddr)) == -1)
